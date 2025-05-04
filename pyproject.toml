@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 
 [project]
 name = "goalytics"
-version = "0.0.3"
+version = "0.1.0"
 description = "Goalytics is a modern Python library designed for advanced football analytics, focused on calculating and predicting key performance metrics like xG (Expected Goals), xA (Expected Assists), and xT (Expected Threat). "
 readme = "README.md"
 authors = [{ name = "Kalinin Mitko", email = "kalinin.mitko@gmail.com" }]

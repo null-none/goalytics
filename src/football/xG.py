@@ -1,5 +1,37 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression
+
+class LinearRegression:
+    def __init__(self):
+        self.coefficients = None  # Will store weights (including bias)
+
+    def fit(self, X, y):
+        """
+        Train the linear regression model using the normal equation.
+        :param X: Feature matrix of shape (n_samples, n_features)
+        :param y: Target vector of shape (n_samples,)
+        """
+        # Add a column of ones to X to account for the bias term (intercept)
+        ones = np.ones((X.shape[0], 1))
+        X_b = np.hstack([ones, X])  # X with bias term
+
+        # Compute weights using the Normal Equation: (X^T X)^-1 X^T y
+        XTX = X_b.T @ X_b
+        XTy = X_b.T @ y
+        self.coefficients = np.linalg.inv(XTX) @ XTy
+
+    def predict(self, X):
+        """
+        Predict output values for given input data.
+        :param X: New input data (n_samples, n_features)
+        :return: Predicted values (n_samples,)
+        """
+        if self.coefficients is None:
+            raise ValueError("Model is not trained yet. Call .fit() first.")
+
+        # Add the bias column again for prediction
+        ones = np.ones((X.shape[0], 1))
+        X_b = np.hstack([ones, X])
+        return X_b @ self.coefficients
 
 
 class ExpectedGoals:

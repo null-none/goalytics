@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class ExpectedThreatFutsal:
     def __init__(self, field_length=40, field_width=20, x_bins=10, y_bins=6):
         """
