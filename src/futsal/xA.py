@@ -2,57 +2,61 @@ import numpy as np
 
 
 class ExpectedAssistsFutsal:
-    def __init__(self, field_length=40, field_width=20):
+    def __init__(self, field_length=40, field_width=20, goal_x=40, goal_y=10):
         """
-        Initialize the xA model optimized for futsal.
-        :param field_length: Length of the futsal pitch (default 40 meters)
-        :param field_width: Width of the futsal pitch (default 20 meters)
+        Futsal-oriented xA model.
+        :param field_length: Pitch length in meters (default 40)
+        :param field_width: Pitch width in meters (default 20)
+        :param goal_x: X-coordinate of center of goal (default at far right)
+        :param goal_y: Y-coordinate of goal center (default center height)
         """
         self.field_length = field_length
         self.field_width = field_width
+        self.goal_x = goal_x
+        self.goal_y = goal_y
 
-    def calculate_pass_xa(self, shot_xg):
+    def estimate_xg(self, x, y):
         """
-        Calculate xA for a single pass based on the resulting shot's xG.
-        :param shot_xg: xG value of the shot following the pass
-        :return: xA value for the pass (clipped between 0 and 1)
+        Estimate xG based on shot location (x, y) using distance + angle heuristics.
+        Closer and more central = higher xG.
         """
-        return np.clip(shot_xg, 0, 1)
+        dx = self.goal_x - x
+        dy = abs(self.goal_y - y)
+        distance = np.hypot(dx, dy)
+        angle = np.arctan2(1.5, distance)  # simulate narrow angles in futsal
+        xg = (1 / (1 + distance)) * angle * 5  # higher weighting for short distance
+        return np.clip(xg, 0, 1)
 
-    def calculate_match_xa(self, passes_shot_xg):
+    def pass_to_xa(self, x1, y1, x2, y2):
         """
-        Calculate total xA for a futsal match.
-        :param passes_shot_xg: List of xG values from shots following passes
-        :return: total xA for the match
+        Estimate xA for a single pass using the end location (x2, y2).
         """
-        total_xa = sum(self.calculate_pass_xa(shot_xg) for shot_xg in passes_shot_xg)
-        return total_xa
+        xg = self.estimate_xg(x2, y2)
+        return xg  # in simple models: xA = resulting xG
 
-    def calculate_average_xa(self, matches_passes_shot_xg):
+    def calculate_total_xa(self, passes):
         """
-        Calculate average xA across multiple futsal matches.
-        :param matches_passes_shot_xg: List of lists of shot xG values for each match
-        :return: average xA per match
+        Compute total xA for all passes.
+        :param passes: List of (x1, y1, x2, y2) passes
         """
-        all_xa = []
-        for passes_shot_xg in matches_passes_shot_xg:
-            match_xa = self.calculate_match_xa(passes_shot_xg)
-            all_xa.append(match_xa)
+        return sum(self.pass_to_xa(*p) for p in passes)
 
-        return np.mean(all_xa) if all_xa else 0
-
-
+    def calculate_average_xa(self, match_passes):
+        """
+        Compute average xA over multiple matches.
+        :param match_passes: List of lists of passes [(x1, y1, x2, y2), ...] per match
+        """
+        match_xa = [self.calculate_total_xa(passes) for passes in match_passes]
+        return np.mean(match_xa) if match_xa else 0
+    
 """
-passes = [0.5, 0.6, 0.8]  # Typical futsal xG values after passes
 xa_model = ExpectedAssistsFutsal()
 
-match_xa = xa_model.calculate_match_xa(passes)
-print(f"Total xA for the futsal match: {match_xa:.2f}")
-
-matches_passes = [
-    [0.4, 0.6, 0.7],
-    [0.8, 0.5]
+passes = [
+    (10, 5, 35, 10),  # diagonal pass into center
+    (20, 4, 38, 11),  # side to far post
+    (18, 10, 39, 10)  # central cut-back
 ]
-avg_xa = xa_model.calculate_average_xa(matches_passes)
-print(f"Average xA per futsal match: {avg_xa:.2f}")
+
+print(f"Total xA: {xa_model.calculate_total_xa(passes):.2f}")
 """
